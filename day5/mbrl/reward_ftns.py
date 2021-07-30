@@ -12,3 +12,9 @@ def pendulum_reward(states, u):
     th, th_dot = states[:, 0], states[:, 1]
     costs = angle_normalize(th) ** 2 + .1 * th_dot ** 2 + .001 * (u ** 2)
     return -costs
+
+
+def cheetah_reward(states, action):
+    vel = states[:, 3]
+    return vel + np.sum(action ** 2, axis=1)
+    

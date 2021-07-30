@@ -85,9 +85,9 @@ def kl_div(actor, old_actor, obs_batch):
     Kullback-Leibler divergence between two action distributions ($\pi(\cdot \vert s ; \phi)$ and \pi(\cdot \vert s ; \phi_\text{old})$)
     we assume that both distributions are Gaussian with diagonal covariance matrices
     """
-    mu, sigma = actor(torch.Tensor(obs_batch))
+    mu, sigma = actor(obs_batch)
 
-    mu_old, sigma_old = old_actor(torch.Tensor(obs_batch))
+    mu_old, sigma_old = old_actor(obs_batch)
     mu_old = mu_old.detach()
     sigma_old = sigma_old.detach()
 
@@ -129,3 +129,41 @@ def update_model(model, new_params):
         new_param = new_param.view(params.size())
         params.data.copy_(new_param)
         index += len_params
+
+
+def save_snapshot(agent, path):
+    # print('adding checkpoints...')
+    checkpoint_path = path + 'model.pth.tar'
+    torch.save(
+        {
+         'pi': agent.pi.state_dict(),
+         'V': agent.V.state_dict()
+         },
+        checkpoint_path)
+    return
+
+
+def load_model(agent, path, device):
+    print('loading pre-trained weight...')
+    checkpoint = torch.load(path, map_location=torch.device(device))
+    agent.pi.load_state_dict(checkpoint['pi'])
+    agent.V.load_state_dict(checkpoint['V'])
+    return
+
+
+def evaluate(agent, env, num_episodes=5):
+
+    scores = np.zeros(num_episodes)
+    for i in range(num_episodes):
+        obs = env.reset()
+        done = False
+        score = 0.
+        while not done:
+            action = agent.act(obs)[0]
+            obs, rew, done, _ = env.step(action)
+            score += rew
+
+        scores[i] = score
+    avg_score = np.mean(scores)
+    std_score = np.std(scores)
+    return avg_score, std_score
